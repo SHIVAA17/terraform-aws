@@ -1,0 +1,218 @@
+ /var/log/cloud-init-output.log
+#Install java on unbutu
+sudo apt update
+sudo apt install fontconfig openjdk-17-jre
+java -version
+#INSTALL JENKINS ON UBUNTU.
+
+sudo wget -O /usr/share/keyrings/jenkins-keyring.asc \
+  https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc]" \
+  https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
+  /etc/apt/sources.list.d/jenkins.list > /dev/null
+sudo apt-get update
+sudo apt-get install jenkins
+
+#install Docker on ubuntu
+# Add Docker's official GPG key:
+sudo apt-get update -y
+sudo apt-get install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# Add the repository to Apt sources:
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+
+
+Cron syntax is as follows:
+MINUTE HOUR DOM MONTH DOW
+
+b9a0a298b31a40d590f4244cb9133543
+Shiv84@471
+
+
+Topics Learnt
+	Aws:EC2 - Bastion Host,Elastic Load Balancer,launch Template,user 		  		  data,security groups,VPC,Storage,
+	    S3    bucket,storage class,security
+	    Basic lambda,
+	    CloudFormation -
+	    RDS-
+	    IAM-
+	    CloudWatch-
+	    EKS,ECS -
+  	Docker:Docker compose,build a image,basic commands,push into a DockerHub
+	Kubernetes:
+	Jenkins :setup,Automation basic,
+	Ansible :passwordless authencation using ssh, galaxy,modules,roles
+	Terraform-commands,statefile remote backend,workspace,secret vault
+
+	Portfolio
+	Professional Photo
+	Open source Contributions
+	CI CD Pipeline Projects
+
+ 1  sudo apt get update
+    2  sudo apt update
+    3  sudo apt install openjdk-1l-jre
+    4  sudo apt install default-jre
+    5  sudo wget -O /usr/share/keyrings/jenkins-keyring.asc   https://pkg.jenkins.io/debian/jenkins.io-2023.key
+    6  echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc]"   https://pkg.jenkins.io/debian binary/ | sudo tee   /etc/apt/sources.list.d/jenkins.list > /dev/null
+    7  sudo apt-get update
+    8  sudo apt-get install jenkins
+    9  sudo systemctl enable jenkins
+   10  sudo systemctl start jenkins
+   11  sudo systemctl status jenkins
+   12  sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+   13  history
+
+
+sonar.projectKey=onix-website
+sqa_a9de5d75fd95d4728bfff0cf9ab133ad82a7adec
+
+
+
+pipeline {
+    agent any
+    tools {
+        maven 'maven3'
+        jdk 'jdk17'
+    }
+    
+    environment {
+        SCANNER_HOME = tool 'sonar-scanner'
+    }
+
+    stages {
+        stage('Git Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/SHIVAA17/Ekart.git'
+            }
+        }
+        
+         stage('compile') {
+            steps {
+                sh "mvn compile"
+            }
+        }
+        
+         stage('Unit Tests') {
+            steps {
+                sh "mvn test -DskipTests=true"
+            }
+        }
+        
+         stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('sonar') {
+    // some block
+    sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectKey=EKART -Dsonar.projectName=EKART \
+    -Dsonar.java.binaries=. '''
+}
+            }
+        }
+        
+         stage('OWASP Dependency Check') {
+            steps {
+                dependencyCheck additionalArguments: ' --scan ./', odcInstallation: 'DC'
+                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+            }
+        }
+        
+        
+         stage('Build') {
+            steps {
+               sh "mvn package -DskipTests=true"
+            }
+        }
+        
+        
+         stage('Deploy To nexus') {
+            steps {
+                withMaven(globalMavenSettingsConfig: 'global-maven', jdk: 'jdk17', maven: 'maven3', mavenSettingsConfig: '', traceability: true) {
+    sh "mvn deploy -DskipTests=true"
+}
+            }
+        }
+        
+        
+         stage('Build and tag Docker Image') {
+            steps {
+               script{
+                   withDockerRegistry(credentialsId: 'docker-cred', toolName: 'docker') {
+    sh "docker build -t shiv229/ekart:latest -f docker/Dockerfile ."
+}
+               }
+            }
+        }
+        
+        
+         stage('Trivy Scan') {
+            steps {
+                sh "trivy image shiv229/ekart:latest > trivy-report.txt "
+            }
+        }
+        
+        
+        stage('Build and push Docker Image') {
+            steps {
+               script{
+                   withDockerRegistry(credentialsId: 'docker-cred', toolName: 'docker') {
+    sh "docker push shiv229/ekart:latest"
+}
+               }
+            }
+        }
+        
+        stage('deploy to kubernetes') {
+    steps {
+        withKubeConfig(
+            caCertificate: '', 
+            clusterName: '', 
+            contextName: '', 
+            credentialsId: 'k8-token', 
+            namespace: 'webapps', 
+            restrictKubeConfigAccess: false, 
+            serverUrl: 'https://172.31.21.249:6443'  // Ensure no extra spaces here
+        ) {
+            sh "kubectl apply -f deploymentservice.yml -n webapps"
+            sh "kubectl get svc -n webapps"
+        }
+    }
+}
+        
+        
+    }
+}
+// Ansible
+ cp /mnt/c/Users/shiv/Downloads/second.pem ~/
+    chmod 400 ~/second.pem
+   ssh -i ~/second.pem ubuntu@3.89.195.45
+nano ~/.ssh/config
+Host ec2-instance
+    HostName 3.89.195.45
+    User ubuntu
+    IdentityFile ~/second.pem
+ssh ec2-instance
+
+
+//Terraform
+	Backend:
+		terraform {
+  	backend "s3" {
+    	bucket = "example-bucket"
+    	key    = "path/to/state"
+    	region = "us-east-1"
+  	}
+	}
+
+
+
+
+	
